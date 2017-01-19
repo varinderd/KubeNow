@@ -1,0 +1,23 @@
+{
+  "builders": [
+    {
+			"name": "all",
+			"type": "googlecompute",
+			"image_name": "kubenow-v020a1-export",
+			"source_image": "kubenow-v020a1",
+			"ssh_username":  "ubuntu",
+      "type": "googlecompute",
+      "account_file": "test/secrets-kubenow/host_cloud/gce-key.json",
+      "project_id": "phenomenal-1145",
+      "zone": "europe-west1-b"
+		}
+  ],
+  "post-processors": [
+    {
+      "type": "googlecompute-export",
+      "paths": [
+        "gs://kubenow-images/kubenow-v020a1.tar.gz"
+      ]
+    }
+  ]
+}

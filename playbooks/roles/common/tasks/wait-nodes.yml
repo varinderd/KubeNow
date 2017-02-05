@@ -4,7 +4,7 @@
     host={{ ansible_ssh_host | default(inventory_hostname) }}
     port=22
     search_regex=OpenSSH
-    delay=10
+    delay=5
     timeout=300
 
 - name: "render node count"
@@ -29,8 +29,7 @@
 
 - name: "wait for all nodes to join the master"
   shell: >
-    kubectl get nodes
-    -o jsonpath='{.items[*].status.conditions[-1:].type}' |
+    kubectl get nodes -o jsonpath='{.items[*].status.conditions[-1:].type}' |
     grep -o 'Ready' | wc -l
   register: get_ready_nodes
   until: "{{get_ready_nodes.stdout | int}} == {{nodes_count | int}}"

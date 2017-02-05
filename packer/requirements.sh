@@ -9,7 +9,18 @@ sudo apt-get install -y \
   apt-transport-https \
   ca-certificates \
   software-properties-common \
-  curl
+  curl \
+  python \
+  daemon \
+  attr \
+  jq
+
+echo "Updating Ubuntu..."
+sudo DEBIAN_FRONTEND=noninteractive \
+  apt-get -y \
+  -o Dpkg::Options::="--force-confdef" \
+  -o Dpkg::Options::="--force-confold" \
+  upgrade
 
 echo "Add Kubernetes repo..."
 sudo sh -c 'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -'
@@ -24,13 +35,8 @@ sudo sh -c 'echo "deb https://apt.dockerproject.org/repo ubuntu-xenial main" > /
 echo "Add GlusterFS repo..."
 sudo add-apt-repository -y ppa:gluster/glusterfs-3.9
 
-echo "Updating Ubuntu..."
+echo "Update apt repos..."
 sudo apt-get update -y
-sudo DEBIAN_FRONTEND=noninteractive \
-  apt-get -y \
-  -o Dpkg::Options::="--force-confdef" \
-  -o Dpkg::Options::="--force-confold" \
-  upgrade
 
 echo "Installing Kubernetes requirements..."
 sudo apt-get install -y \
@@ -42,15 +48,10 @@ sudo apt-get install -y \
   kubectl=1.5.2-00 \
   kubernetes-cni=0.3.0.1-07a8a2-00
 
-echo "Installing other requirements..."
-# APT requirements
+echo "Installing gluster etc..."
 sudo apt-get install -y \
-  python \
-  daemon \
-  attr \
-  glusterfs-client \
-  jq
-
+  glusterfs-client
+  
 # Helm
 HELM_TGZ=helm-v2.1.0-linux-amd64.tar.gz
 wget -P /tmp/ https://kubernetes-helm.storage.googleapis.com/$HELM_TGZ

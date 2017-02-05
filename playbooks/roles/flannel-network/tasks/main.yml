@@ -1,0 +1,4 @@
+---
+- name: install flannel
+  shell: >
+    curl -sSL "https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel.yml?raw=true" | kubectl create -f -

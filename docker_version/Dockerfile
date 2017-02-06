@@ -2,9 +2,10 @@ FROM ubuntu:xenial-20161213
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update -qq
+# select swedish ubuntu archive mirror
+RUN sed -i "s#http://archive#http://se.archive#g" /etc/apt/sources.list
 
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     apt-transport-https \
     apt-utils \
     ca-certificates \
@@ -19,13 +20,15 @@ RUN apt-get install -y \
     jq \
     linux-image-$(uname -r) \
     linux-image-extra-$(uname -r) \
-    linux-image-extra-virtual
+    linux-image-extra-virtual \
+    && rm -rf /var/lib/apt/lists/*
 
 # upgrade
 RUN apt-get -y \
     -o Dpkg::Options::="--force-confdef" \
     -o Dpkg::Options::="--force-confold" \
-    upgrade
+    upgrade \
+    && rm -rf /var/lib/apt/lists/*
 
 # remove unwanted systemd services
 RUN for i in /lib/systemd/system/sysinit.target.wants/*; do [ "${i##*/}" = "systemd-tmpfiles-setup.service" ] || rm -f "$i"; done; \
@@ -52,25 +55,25 @@ RUN sh -c 'echo "deb https://apt.dockerproject.org/repo ubuntu-xenial main" > /e
 # Add GlusterFS repo...
 RUN add-apt-repository -y ppa:gluster/glusterfs-3.9
 
-# Update apt repos...
-RUN apt-get update -y
-
 # Installing Kubernetes requirements...
-RUN apt-get install -y \
+RUN apt-get update -y && apt-get install -y \
   docker-engine=1.12.5-0~ubuntu-xenial \
   kubelet=1.5.2-00 \
   kubectl=1.5.2-00 \
-  kubernetes-cni=0.3.0.1-07a8a2-00
+  kubernetes-cni=0.3.0.1-07a8a2-00 \
+  && rm -rf /var/lib/apt/lists/*
   
 # Installing gluster etc...
-RUN apt-get install -y \
-    glusterfs-client
+RUN apt-get update -y && apt-get install -y \
+    glusterfs-client \
+    && rm -rf /var/lib/apt/lists/*
     
 # Helm
 ARG HELM_TGZ=helm-v2.1.0-linux-amd64.tar.gz
-RUN wget -P /tmp/ https://kubernetes-helm.storage.googleapis.com/$HELM_TGZ
-RUN tar -xf /tmp/$HELM_TGZ -C /tmp/
-RUN mv /tmp/linux-amd64/helm /usr/local/bin/
+RUN wget -P /tmp/ https://kubernetes-helm.storage.googleapis.com/$HELM_TGZ \
+    && tar -xf /tmp/$HELM_TGZ -C /tmp/ \
+    && mv /tmp/linux-amd64/helm /usr/local/bin/ \
+    && rm /tmp/$HELM_TGZ
 
 # Create volume for docker
 VOLUME /var/lib/docker
@@ -78,11 +81,12 @@ VOLUME /var/lib/docker
 
 # -------- Some edits to install ssh - to make it Ansiable compliant -----
 
-#RUN mkdir -p /root/.ssh
+RUN mkdir -p /root/.ssh
 #COPY key.pub /root/.ssh/authorized_keys
 
-RUN apt-get install -y \
-    openssh-server
+RUN apt-get update -y &&  apt-get install -y \
+    openssh-server \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN systemctl enable ssh
 
@@ -90,8 +94,8 @@ RUN systemctl enable ssh
 
 
 RUN echo "Installing Kubeadm - this will fail at post-install but that doesn't matter"
-RUN apt-get install -y \
-    kubeadm=1.6.0-alpha.0-2074-a092d8e0f95f52-00; exit 0
+RUN apt-get update -y && apt-get install -y \
+    kubeadm=1.6.0-alpha.0-2074-a092d8e0f95f52-00; rm -rf /var/lib/apt/lists/*; exit 0
 
 
 # -------- PULL docker images --------------------------------------------

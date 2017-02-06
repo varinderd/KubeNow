@@ -78,8 +78,8 @@ VOLUME /var/lib/docker
 
 # -------- Some edits to install ssh - to make it Ansiable compliant -----
 
-RUN mkdir -p /root/.ssh
-COPY key.pub /root/.ssh/authorized_keys
+#RUN mkdir -p /root/.ssh
+#COPY key.pub /root/.ssh/authorized_keys
 
 RUN apt-get install -y \
     openssh-server

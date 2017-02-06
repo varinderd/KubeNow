@@ -7,12 +7,15 @@ echo "Start containers"
 
 echo "Master"
 docker run -it --privileged=true --name=docker-master -h docker-master -d --security-opt seccomp:unconfined --cap-add=SYS_ADMIN -v /sys/fs/cgroup:/sys/fs/cgroup:ro kubeadm_docker /sbin/init
+docker cp ssh_key.pub docker-master:/root/.ssh/authorized_keys
 
 echo "Edge"
 docker run -it --privileged=true --name=docker-edge-00 -h docker-edge-00 -d --security-opt seccomp:unconfined --cap-add=SYS_ADMIN -v /sys/fs/cgroup:/sys/fs/cgroup:ro kubeadm_docker /sbin/init
+docker cp ssh_key.pub docker-edge-00:/root/.ssh/authorized_keys
 
 echo "Node"
 docker run -it --privileged=true --name=docker-node-00 -h docker-node-00 -d --security-opt seccomp:unconfined --cap-add=SYS_ADMIN -v /sys/fs/cgroup:/sys/fs/cgroup:ro kubeadm_docker /sbin/init
+docker cp ssh_key.pub docker-node-00:/root/.ssh/authorized_keys
 
 echo "Wait until master is up (responding on ssh)"
 for i in $(seq 1 200); do nc -z -w3 172.17.0.2 22 && break || sleep 3; done;
@@ -60,6 +63,7 @@ PORTAL_APP_REPO_FOLDER="/home/anders/projekt/phenomenal/cloud-deploy"
 TF_VAR_jupyter_password="password"
 TF_VAR_galaxy_admin_password="password"
 TF_VAR_galaxy_admin_email="anders@ormbunkar.se"
+
 # wait for all pods in core stack to be ready
 ansible-playbook -i $ansible_inventory_file \
                  $PORTAL_APP_REPO_FOLDER'/playbooks/wait_for_all_pods_ready.yml'

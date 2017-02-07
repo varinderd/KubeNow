@@ -24,10 +24,10 @@ echo "init kubeadm on master"
 docker exec -it docker-master kubeadm init --skip-preflight-checks --pod-network-cidr=10.244.0.0/16 --token=$kube_token
 
 echo "edge join master"
-docker exec -it docker-node-00 kubeadm join --token=$kube_token 172.17.0.2
+docker exec -it docker-node-00 kubeadm join --skip-preflight-checks --token=$kube_token 172.17.0.2
 
 echo "node join master"
-docker exec -it docker-edge-00 kubeadm join --token=$kube_token 172.17.0.2
+docker exec -it docker-edge-00 kubeadm join --skip-preflight-checks --token=$kube_token 172.17.0.2
 
 
 # Generate inventory

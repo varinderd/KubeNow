@@ -18,9 +18,6 @@ RUN apt-get update && apt-get install -y \
     attr \
     vim \
     jq \
-    linux-image-$(uname -r) \
-    linux-image-extra-$(uname -r) \
-    linux-image-extra-virtual \
     && rm -rf /var/lib/apt/lists/*
 
 # upgrade

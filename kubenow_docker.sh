@@ -59,7 +59,7 @@ ansible-playbook -i inventory -e "nodes_count=3" --skip-tags "cloudflare" playbo
 
 ansible_inventory_file="inventory"
 domain="docker.local"
-PORTAL_APP_REPO_FOLDER="/home/anders/projekt/phenomenal/cloud-deploy"
+PORTAL_APP_REPO_FOLDER="../cloud-deploy"
 TF_VAR_jupyter_password="password"
 TF_VAR_galaxy_admin_password="password"
 TF_VAR_galaxy_admin_email="anders@ormbunkar.se"

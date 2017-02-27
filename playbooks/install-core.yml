@@ -2,6 +2,7 @@
   gather_facts: False
   roles:
     - { role: common, tags: [ 'minimal' ] }
+#    - { role: weave-network, tags: [ 'minimal' ] }
     - { role: flannel-network, tags: [ 'minimal' ] }
     - { role: start-helm, tags: [ 'minimal' ] }
     - { role: gluster-server, tags: [ 'glusterfs' ] }

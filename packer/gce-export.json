@@ -3,8 +3,8 @@
     {
 			"name": "all",
 			"type": "googlecompute",
-			"image_name": "kubenow-v020a1-export",
-			"source_image": "kubenow-v020a1",
+			"image_name": "kubenow-v020-export",
+			"source_image": "kubenow-v020",
 			"ssh_username":  "ubuntu",
       "type": "googlecompute",
       "account_file": "test/secrets-kubenow/host_cloud/gce-key.json",
@@ -16,7 +16,7 @@
     {
       "type": "googlecompute-export",
       "paths": [
-        "gs://kubenow-images/kubenow-v020a1.tar.gz"
+        "gs://kubenow-images/kubenow-v020.tar.gz"
       ]
     }
   ]

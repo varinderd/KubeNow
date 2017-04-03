@@ -94,6 +94,10 @@ RUN echo "Installing Kubeadm - this will fail at post-install but that doesn't m
 RUN apt-get update -y && apt-get install -y \
     kubeadm=1.6.0-alpha.0-2074-a092d8e0f95f52-00; rm -rf /var/lib/apt/lists/*; exit 0
 
+# Add other sock for Docker
+RUN echo "DOCKER_HOST=unix:///var/tmp/docker.sock" >> /etc/environment
+
+
 
 # -------- PULL docker images --------------------------------------------
 #

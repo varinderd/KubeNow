@@ -55,9 +55,9 @@ RUN add-apt-repository -y ppa:gluster/glusterfs-3.9
 # Installing Kubernetes requirements...
 RUN apt-get update -y && apt-get install -y \
   docker-engine=1.12.5-0~ubuntu-xenial \
-  kubelet=1.5.2-00 \
-  kubectl=1.5.2-00 \
-  kubernetes-cni=0.3.0.1-07a8a2-00 \
+  kubelet=1.6.1-00 \
+  kubectl=1.6.1-00 \
+  kubernetes-cni=0.5.1-00 \
   && rm -rf /var/lib/apt/lists/*
   
 # Installing gluster etc...
@@ -73,7 +73,7 @@ RUN wget -P /tmp/ https://kubernetes-helm.storage.googleapis.com/$HELM_TGZ \
     && rm /tmp/$HELM_TGZ
 
 # Create volume for docker
-VOLUME /var/lib/docker
+# VOLUME /var/lib/docker
 
 
 # -------- Some edits to install ssh - to make it Ansiable compliant -----
@@ -92,10 +92,23 @@ RUN systemctl enable ssh
 
 RUN echo "Installing Kubeadm - this will fail at post-install but that doesn't matter"
 RUN apt-get update -y && apt-get install -y \
-    kubeadm=1.6.0-alpha.0-2074-a092d8e0f95f52-00; rm -rf /var/lib/apt/lists/*; exit 0
+    kubeadm=1.6.1-00; rm -rf /var/lib/apt/lists/*; exit 0
 
 # Add other sock for Docker
-RUN echo "DOCKER_HOST=unix:///var/tmp/docker.sock" >> /etc/environment
+#RUN systemctl disable docker
+#RUN bash -c 'echo manual | tee /etc/init/docker.override'
+#RUN echo "DOCKER_HOST=unix:///var/tmp/docker.sock" >> /etc/environment
+
+ENV DOCKER_HOST=unix:///var/tmp/docker.sock
+#RUN mkdir -p /etc/profile.d
+#RUN echo "export DOCKER_HOST=unix:///var/tmp/docker.sock" >> /etc/profile.d/docker-host-env.sh
+
+#RUN mkdir -p /etc/systemd/system/docker.service.d
+#RUN echo "[Service]" >> /etc/systemd/system/docker.service.d/sock.conf
+#RUN echo "ExecStart=" >> /etc/systemd/system/docker.service.d/sock.conf
+#RUN echo "ExecStart=/usr/bin/docker daemon -H unix:///var/tmp/docker.sock -H fd://" >> /etc/systemd/system/docker.service.d/sock.conf
+
+#RUN echo 'Environment="DOCKER_HOST=unix:///var/tmp/docker.sock"' >> /etc/systemd/system/docker.service.d/sock.conf
 
 
 

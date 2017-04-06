@@ -94,6 +94,8 @@ RUN echo "Installing Kubeadm - this will fail at post-install but that doesn't m
 RUN apt-get update -y && apt-get install -y \
     kubeadm=1.6.1-00; rm -rf /var/lib/apt/lists/*; exit 0
 
+RUN sed -i 's|KUBELET_KUBECONFIG_ARGS=|KUBELET_KUBECONFIG_ARGS=--docker-endpoint=unix:///var/tmp/docker.sock |g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
 # Add other sock for Docker
 #RUN systemctl disable docker
 #RUN bash -c 'echo manual | tee /etc/init/docker.override'

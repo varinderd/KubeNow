@@ -24,7 +24,7 @@ kube_token=$(./generate_kubetoken.sh)
 echo "Wait until master is up (responding on ssh)"
 for i in $(seq 1 200); do nc -z -w3 172.17.0.2 22 && break || sleep 3; done;
 
-
+# kubeadm init --skip-preflight-checks --pod-network-cidr=10.244.0.0/16 --token=e04631.6f3901d2143cc132
 echo "init kubeadm on master"
 docker exec -it docker-master kubeadm init --skip-preflight-checks --pod-network-cidr=10.244.0.0/16 --token=$kube_token
 

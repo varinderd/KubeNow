@@ -1,0 +1,14 @@
+- name: Ensures /etc/kubenow/yaml dir exists
+  become: yes
+  file: path=/etc/kubenow/yaml/ state=directory
+
+- name: render shared-volume-nfs configuration
+  become: yes
+  template:
+    src: shared-volume-nfs.yml
+    dest: "/etc/kubenow/yaml/shared-volume-nfs.yaml"
+
+- name: create local-shared-volume (Kubernetes side)
+  command: >
+    kubectl apply -f
+    /etc/kubenow/yaml/shared-volume-nfs.yaml

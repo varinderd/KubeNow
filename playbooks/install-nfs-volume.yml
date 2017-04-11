@@ -1,0 +1,8 @@
+- hosts: master
+  gather_facts: False
+  vars:
+    nfs_vol_size: 50Gi
+    nfs_path: "/shared"
+    nfs_server: 192.168.10.100
+  roles:
+    - shared-volume-nfs

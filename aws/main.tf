@@ -37,6 +37,16 @@ variable glusternode_count {default = 0}
 variable glusternode_instance_type {}
 variable glusternode_disk_size {}
 
+# Networking
+variable vpc_id {default = ""}
+variable subnet_id {default = ""}
+variable additional_sec_group_ids { type="list" default = [] }
+
+#variable vpc_id {default = "vpc-be2e45da"}
+#variable subnet_id {default = "subnet-b786cbd3"}
+#variable additional_sec_group_ids { type="list" default = ["sg-af60bdc9"] }
+
+
 # Provider
 provider "aws" {
   access_key = "${var.aws_access_key_id}" 
@@ -51,11 +61,27 @@ module "keypair" {
   name_prefix = "${var.cluster_prefix}"
 }
 
-# VPC Virtual Private Cloud - Networking
+# Networking - VPC
 module "vpc" {
-  source = "./vpc"
+  vpc_id = "${var.vpc_id}"
   name_prefix = "${var.cluster_prefix}"
-  availability_zone = "${var.availability_zone}" 
+  source = "./vpc"
+}
+
+# Networking - subnet
+module "subnet" {
+  subnet_id = "${var.subnet_id}"
+  vpc_id = "${module.vpc.id}"
+  name_prefix = "${var.cluster_prefix}"
+  availability_zone = "${var.availability_zone}"
+  source = "./subnet"
+}
+
+# Networking - sec-group
+module "security_group" {
+  name_prefix = "${var.cluster_prefix}"
+  vpc_id = "${module.vpc.id}"
+  source = "./security_group"
 }
 
 # Lookup image-id of kubenow-image
@@ -84,8 +110,8 @@ module "master" {
   image_id = "${data.aws_ami.kubenow.id}"
   ssh_keypair_name = "${module.keypair.keypair_name}"
   ssh_user = "${var.ssh_user}"
-  subnet_id = "${module.vpc.subnet_id}"
-  security_group_id = "${module.vpc.security_group_id}"
+  subnet_id = "${module.subnet.id}"
+  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
   availability_zone = "${var.availability_zone}"  
   kubeadm_token = "${var.kubeadm_token}"
   bootstrap_file = "bootstrap/master.sh"
@@ -105,8 +131,8 @@ module "edge" {
   image_id = "${data.aws_ami.kubenow.id}"
   ssh_keypair_name = "${module.keypair.keypair_name}"
   ssh_user = "${var.ssh_user}"
-  subnet_id = "${module.vpc.subnet_id}"
-  security_group_id = "${module.vpc.security_group_id}"
+  subnet_id = "${module.subnet.id}"
+  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
   availability_zone = "${var.availability_zone}"  
   kubeadm_token = "${var.kubeadm_token}"
   bootstrap_file = "bootstrap/node.sh"
@@ -127,8 +153,8 @@ module "node" {
   image_id = "${data.aws_ami.kubenow.id}"
   ssh_keypair_name = "${module.keypair.keypair_name}"
   ssh_user = "${var.ssh_user}"
-  subnet_id = "${module.vpc.subnet_id}"
-  security_group_id = "${module.vpc.security_group_id}"
+  subnet_id = "${module.subnet.id}"
+  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
   availability_zone = "${var.availability_zone}"  
   kubeadm_token = "${var.kubeadm_token}"
   bootstrap_file = "bootstrap/node.sh"
@@ -148,8 +174,8 @@ module "glusternode" {
   image_id = "${data.aws_ami.kubenow.id}"
   ssh_keypair_name = "${module.keypair.keypair_name}"
   ssh_user = "${var.ssh_user}"
-  subnet_id = "${module.vpc.subnet_id}"
-  security_group_id = "${module.vpc.security_group_id}"
+  subnet_id = "${module.subnet.id}"
+  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
   availability_zone = "${var.availability_zone}"  
   kubeadm_token = "${var.kubeadm_token}"
   bootstrap_file = "bootstrap/node.sh"

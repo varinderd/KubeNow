@@ -1,51 +1,130 @@
 # Cluster settings
 variable cluster_prefix {}
 
-variable kubenow_dir { default = "/tmp" } # to do fixme
-variable kubenow_image { default = "kubenow-v031.qcow2" } # to do fixme
-variable ssh_key { default = "ssh_key.pub"}
-variable ssh_user{ default = "ubuntu"}
+variable kubenow_dir {
+  default = "/tmp"
+} # to do fixme
+
+variable kubenow_image {
+  default = "kubenow-v031.qcow2"
+} # to do fixme
+
+variable ssh_key {
+  default = "ssh_key.pub"
+}
+
+variable ssh_user {
+  default = "ubuntu"
+}
 
 variable kubeadm_token {}
 
-variable volume_pool  { default = "default" }
+variable volume_pool {
+  default = "default"
+}
 
-variable network_mode  { default = "nat" }
-variable bridge_name { default = "br0" }
+variable network_mode {
+  default = "nat"
+}
+
+variable bridge_name {
+  default = "br0"
+}
 
 # Master settings
-variable master_count { default = 1 }
-variable master_vcpu { default = 2 }
-variable master_memory { default = 1024 }
-variable master_as_edge { default = "true" }
-variable master_extra_disk_size { default = "200" }
+variable master_count {
+  default = 1
+}
+
+variable master_vcpu {
+  default = 2
+}
+
+variable master_memory {
+  default = 1024
+}
+
+variable master_as_edge {
+  default = "true"
+}
+
+variable master_extra_disk_size {
+  default = "200"
+}
 
 # Nodes settings
-variable node_count { default = 0 }
-variable node_vcpu { default = 2 }
-variable node_memory { default = 1024 }
+variable node_count {
+  default = 0
+}
+
+variable node_vcpu {
+  default = 2
+}
+
+variable node_memory {
+  default = 1024
+}
 
 # Edges settings
-variable edge_count { default = 0 }
-variable edge_vcpu { default = 2 }
-variable edge_memory { default = 1024 }
+variable edge_count {
+  default = 0
+}
+
+variable edge_vcpu {
+  default = 2
+}
+
+variable edge_memory {
+  default = 1024
+}
 
 # Glusternode settings
-variable glusternode_count { default = 0 }
-variable glusternode_vcpu { default = 2 }
-variable glusternode_memory { default = 1024 }
-variable glusternode_extra_disk_size { default = "200" }
+variable glusternode_count {
+  default = 0
+}
+
+variable glusternode_vcpu {
+  default = 2
+}
+
+variable glusternode_memory {
+  default = 1024
+}
+
+variable glusternode_extra_disk_size {
+  default = "200"
+}
+
 variable gluster_volumetype {
   default = "none:1"
 }
 
 # Cloudflare settings
-variable use_cloudflare { default = "false" }
-variable cloudflare_email { default = "nothing" }
-variable cloudflare_token { default = "nothing" }
-variable cloudflare_domain { default = "" }
-variable cloudflare_proxied { default = "false" }
-variable cloudflare_record_texts { type = "list" default = ["*"]}
+variable use_cloudflare {
+  default = "false"
+}
+
+variable cloudflare_email {
+  default = "nothing"
+}
+
+variable cloudflare_token {
+  default = "nothing"
+}
+
+variable cloudflare_domain {
+  default = ""
+}
+
+variable cloudflare_proxied {
+  default = "false"
+}
+
+variable cloudflare_record_texts {
+  type = "list"
+
+  default = ["*"]
+}
 
 # Provider
 provider "libvirt" {
@@ -56,8 +135,9 @@ provider "libvirt" {
 resource "libvirt_network" "network" {
   name = "${var.cluster_prefix}-network"
   mode = "${var.network_mode}"
-#  bridge = "${var.bridge_name}"
-  domain = "k8s.local"
+
+  #  bridge = "${var.bridge_name}"
+  domain    = "k8s.local"
   addresses = ["10.0.0.0/16"]
 }
 
@@ -87,7 +167,6 @@ module "master" {
 
   # Disk settings
   extra_disk_size = "${var.master_extra_disk_size}"
-
   # Bootstrap settings
   bootstrap_file = "bootstrap/master.sh"
   kubeadm_token  = "${var.kubeadm_token}"
@@ -115,7 +194,6 @@ module "node" {
 
   # Disk settings
   extra_disk_size = "0"
-
   # Bootstrap settings
   bootstrap_file = "bootstrap/node.sh"
   kubeadm_token  = "${var.kubeadm_token}"
@@ -143,7 +221,6 @@ module "edge" {
 
   # Disk settings
   extra_disk_size = "0"
-
   # Bootstrap settings
   bootstrap_file = "bootstrap/node.sh"
   kubeadm_token  = "${var.kubeadm_token}"
@@ -171,7 +248,6 @@ module "glusternode" {
 
   # Disk settings
   extra_disk_size = "${var.glusternode_extra_disk_size}"
-
   # Bootstrap settings
   bootstrap_file = "bootstrap/node.sh"
   kubeadm_token  = "${var.kubeadm_token}"

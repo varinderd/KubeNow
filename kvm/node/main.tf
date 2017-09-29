@@ -1,5 +1,6 @@
 # Core settings
 variable count {}
+
 variable name_prefix {}
 variable vcpu {}
 variable memory {}
@@ -7,6 +8,7 @@ variable volume_pool {}
 
 # SSH settings
 variable ssh_key {}
+
 variable ssh_user {}
 
 # Network settings
@@ -14,14 +16,27 @@ variable network_id {}
 
 # Disk settings
 variable template_vol_id {}
-variable extra_disk_size { default = 0 }
+
+variable extra_disk_size {
+  default = 0
+}
 
 # Bootstrap settings
 variable bootstrap_file {}
+
 variable kubeadm_token {}
-variable node_labels { type = "list" }
-variable node_taints { type = "list" }
-variable master_ip { default = "" }
+
+variable node_labels {
+  type = "list"
+}
+
+variable node_taints {
+  type = "list"
+}
+
+variable master_ip {
+  default = ""
+}
 
 # Bootstrap
 data "template_file" "instance_bootstrap" {
@@ -74,12 +89,12 @@ resource "libvirt_volume" "extra_disk" {
 
 # Create instances
 resource "libvirt_domain" "instance" {
-  count       = "${var.count}"
-  name        = "${var.name_prefix}-${format("%03d", count.index)}"
-  vcpu        = "${var.vcpu}"
-  memory      = "${var.memory}"
+  count  = "${var.count}"
+  name   = "${var.name_prefix}-${format("%03d", count.index)}"
+  vcpu   = "${var.vcpu}"
+  memory = "${var.memory}"
 
-  cloudinit   = "${libvirt_cloudinit.clouddrive.id}"
+  cloudinit = "${libvirt_cloudinit.clouddrive.id}"
 
   disk = [
     {
@@ -87,12 +102,13 @@ resource "libvirt_domain" "instance" {
     },
     {
       volume_id = "${element(libvirt_volume.extra_disk.*.id, count.index)}"
-    }
+    },
   ]
 
   network_interface {
-    hostname       = "${var.name_prefix}-${format("%03d", count.index)}"
-    network_id     = "${var.network_id}"
+    hostname   = "${var.name_prefix}-${format("%03d", count.index)}"
+    network_id = "${var.network_id}"
+
     #addresses     = ["10.10.10.1"]
     wait_for_lease = true
   }

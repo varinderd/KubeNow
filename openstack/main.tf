@@ -2,7 +2,7 @@
 variable cluster_prefix {}
 
 variable kubenow_image {
-  default = "kubenow-v031"
+  default = "kubenow-v040b1"
 }
 
 variable ssh_user {
@@ -101,6 +101,9 @@ variable cloudflare_record_texts {
   type    = "list"
   default = ["*"]
 }
+
+# Provider
+provider "openstack" {}
 
 # Upload SSH key to OpenStack
 module "keypair" {
@@ -271,4 +274,5 @@ module "generate-inventory" {
   cluster_prefix    = "${var.cluster_prefix}"
   use_cloudflare    = "${var.use_cloudflare}"
   cloudflare_domain = "${var.cloudflare_domain}"
+  ssh_user          = "${var.ssh_user}"
 }

@@ -40,7 +40,7 @@ if [[ "$response" != 200 ]]; then
   fi
 fi
 
-echo "Downloading image to local dir $LOCAL_DIR"
+echo "Downloading image $FILE_NAME to local dir $LOCAL_DIR"
 
 mkdir -p "$LOCAL_DIR"
 curl "$IMAGE_BUCKET_URL/$FILE_NAME" \

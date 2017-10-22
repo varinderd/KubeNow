@@ -98,6 +98,14 @@ RUN apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
 RUN apt-get update -y && apt-get install -y azure-cli \
             && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Google gcloud cli
+RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-xenial main" |
+    tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+RUN apt-get update -y && apt-get install -y google-cloud-sdk \
+            && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
 # Add KubeNow (and group)
 COPY . /opt/KubeNow
 WORKDIR /opt/KubeNow

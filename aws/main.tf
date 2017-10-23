@@ -165,11 +165,28 @@ data "aws_ami" "kubenow" {
   }
 }
 
-module "master" {
+variable "generic_nodes" {
+  type = "list"
+  default = [
+    {
+      node_count = "2"
+      label      = "test1"
+      public_ip  = "true"
+    },
+    {
+      node_count = "1"
+      label      = "test2"
+      public_ip  = "false"
+    }
+  ]
+}
+
+module "generic" {
   # Core settings
-  source            = "./node"
-  count             = "${var.master_count}"
-  name_prefix       = "${var.cluster_prefix}-master"
+  source            = "./generic"
+  count             = "${length(var.generic_nodes)}"
+  name_prefix       = "${lookup(var.generic_nodes[count.index], "node_count")}"
+
   instance_type     = "${var.master_instance_type}"
   image_id          = "${data.aws_ami.kubenow.id}"
   availability_zone = "${var.availability_zone}"
@@ -192,129 +209,4 @@ module "master" {
   node_labels    = "${split(",", var.master_as_edge == "true" ? "role=edge" : "")}"
   node_taints    = [""]
   master_ip      = ""
-}
-
-module "node" {
-  # Core settings
-  source            = "./node"
-  count             = "${var.node_count}"
-  name_prefix       = "${var.cluster_prefix}-node"
-  instance_type     = "${var.node_instance_type}"
-  image_id          = "${data.aws_ami.kubenow.id}"
-  availability_zone = "${var.availability_zone}"
-
-  # SSH settings
-  ssh_user         = "${var.ssh_user}"
-  ssh_keypair_name = "${module.keypair.keypair_name}"
-
-  # Network settings
-  subnet_id          = "${module.subnet.id}"
-  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
-
-  # Disk settings
-  disk_size       = "${var.node_disk_size}"
-  extra_disk_size = "0"
-
-  # Bootstrap settings
-  bootstrap_file = "bootstrap/node.sh"
-  kubeadm_token  = "${var.kubeadm_token}"
-  node_labels    = ["role=node"]
-  node_taints    = [""]
-  master_ip      = "${element(module.master.local_ip_v4, 0)}"
-}
-
-module "edge" {
-  # Core settings
-  source            = "./node"
-  count             = "${var.edge_count}"
-  name_prefix       = "${var.cluster_prefix}-edge"
-  instance_type     = "${var.edge_instance_type}"
-  image_id          = "${data.aws_ami.kubenow.id}"
-  availability_zone = "${var.availability_zone}"
-
-  # SSH settings
-  ssh_user         = "${var.ssh_user}"
-  ssh_keypair_name = "${module.keypair.keypair_name}"
-
-  # Network settings
-  subnet_id          = "${module.subnet.id}"
-  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
-
-  # Disk settings
-  disk_size       = "${var.edge_disk_size}"
-  extra_disk_size = "0"
-
-  # Bootstrap settings
-  bootstrap_file = "bootstrap/node.sh"
-  kubeadm_token  = "${var.kubeadm_token}"
-  node_labels    = ["role=edge"]
-  node_taints    = [""]
-  master_ip      = "${element(module.master.local_ip_v4, 0)}"
-}
-
-module "glusternode" {
-  # Core settings
-  source            = "./node"
-  count             = "${var.glusternode_count}"
-  name_prefix       = "${var.cluster_prefix}-glusternode"
-  instance_type     = "${var.glusternode_instance_type}"
-  image_id          = "${data.aws_ami.kubenow.id}"
-  availability_zone = "${var.availability_zone}"
-
-  # SSH settings
-  ssh_user         = "${var.ssh_user}"
-  ssh_keypair_name = "${module.keypair.keypair_name}"
-
-  # Network settings
-  subnet_id          = "${module.subnet.id}"
-  security_group_ids = "${concat(module.security_group.id, var.additional_sec_group_ids)}"
-
-  # Disk settings
-  disk_size       = "${var.glusternode_disk_size}"
-  extra_disk_size = "${var.glusternode_extra_disk_size}"
-
-  # Bootstrap settings
-  bootstrap_file = "bootstrap/node.sh"
-  kubeadm_token  = "${var.kubeadm_token}"
-  node_labels    = ["storagenode=glusterfs"]
-  node_taints    = [""]
-  master_ip      = "${element(module.master.local_ip_v4, 0)}"
-}
-
-# The code below (from here to end) should be identical for all cloud providers
-
-# set cloudflare record (optional)
-module "cloudflare" {
-  # count values can not be dynamically computed, that's why we are using var.edge_count and not length(iplist)
-  record_count      = "${var.use_cloudflare != true ? 0 : var.master_as_edge == true ? (var.edge_count + var.master_count) * length(var.cloudflare_record_texts) : var.edge_count * length(var.cloudflare_record_texts)}"
-  source            = "../common/cloudflare"
-  cloudflare_email  = "${var.cloudflare_email}"
-  cloudflare_token  = "${var.cloudflare_token}"
-  cloudflare_domain = "${var.cloudflare_domain}"
-
-  # add cluster prefix to record names
-  record_names = "${formatlist("%s.%s", var.cloudflare_record_texts, var.cluster_prefix)}"
-
-  # terraform interpolation is limited and can not return list in conditionals, workaround: first join to string, then split)
-  iplist  = "${split(",", var.master_as_edge == true ? join(",", concat(module.edge.public_ip, module.master.public_ip) ) : join(",", module.edge.public_ip) )}"
-  proxied = "${var.cloudflare_proxied}"
-}
-
-# Generate Ansible inventory (identical for each cloud provider)
-module "generate-inventory" {
-  source             = "../common/inventory"
-  master_hostnames   = "${module.master.hostnames}"
-  master_public_ip   = "${module.master.public_ip}"
-  edge_hostnames     = "${module.edge.hostnames}"
-  edge_public_ip     = "${module.edge.public_ip}"
-  master_as_edge     = "${var.master_as_edge}"
-  edge_count         = "${var.edge_count}"
-  node_count         = "${var.node_count}"
-  glusternode_count  = "${var.glusternode_count}"
-  gluster_volumetype = "${var.gluster_volumetype}"
-  extra_disk_device  = "${element(concat(module.glusternode.extra_disk_device, list("")),0)}"
-  cluster_prefix     = "${var.cluster_prefix}"
-  use_cloudflare     = "${var.use_cloudflare}"
-  cloudflare_domain  = "${var.cloudflare_domain}"
-  ssh_user           = "${var.ssh_user}"
 }

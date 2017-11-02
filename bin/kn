@@ -29,7 +29,7 @@ Commands:
 TEXT_END
 }
 
-# Inspired by https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+# Adapted from stackoverflow-questions-59895
 function resolve_links
 {
   source=$1
@@ -50,12 +50,12 @@ if [ -z "$KUBENOW_VERSION" ] ; then
 fi
 echo "Using KubeNow docker-image tag: $KUBENOW_VERSION"
 
+# Get all local user group id:s (to be added to user inside docker-image)
+LOCAL_GROUP_IDS="$(id -G)"
+
 # Command name replacement
 first="$1"; shift; set -- "${first/ssh/ssh-kn}" "$@"
 first="$1"; shift; set -- "${first/init/init-kn}" "$@"
-
-# Get all local user group id:s (to be added to user inside docker-image)
-LOCAL_GROUP_IDS="$(id -G)"
 
 case "$1" in
     help)
@@ -69,7 +69,7 @@ case "$1" in
         latest_stable="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
                          jq -r '[.[] | select(.prerelease==false) | .tag_name'][0])"
         master=
-        laterst_url=
+        latest_url=
         latest_stabe_url=
         master_url=
 
@@ -84,12 +84,12 @@ case "$1" in
         # rm temp
 
         # pull latest docker
-        docker pull
+        kubenow/provisioners:"$KUBENOW_VERSION"
 
         exit
         ;;
 
-    init)
+    init-kn)
         # Validate
         if [ "$#" -ne 3 ]; then
           >&2 echo "Error: wrong number of argument for the init command"
@@ -124,7 +124,7 @@ case "$1" in
           "/opt/KubeNow/bin/docker-entrypoint" "$@"
         ;;
 
-    terraform|ansible|ansible-playbook|kubetoken|apply|destroy|kubectl|helm|openstack|az|ssh|bash)
+    terraform|ansible|ansible-playbook|kubetoken|apply|destroy|kubectl|helm|openstack|az|ssh-kn|bash)
         # Validate PWD (not needed for a selection of commands)
         if ! grep -qw "$COMMAND" <<< "kubetoken az bash"; then
           if [ ! -f ssh_key ] || [ ! -f ssh_key.pub ] ; then

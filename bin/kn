@@ -79,11 +79,11 @@ function upgrade {
   url="https://raw.githubusercontent.com/kubenow/KubeNow/$tag/bin/kn"
 
   # get full filename of this script
-  absolute_file="$(resolve_links ${BASH_SOURCE[0]})"
+  absolute_file="$(resolve_links "${BASH_SOURCE[0]}")"
 
   # download new version to temp
   tmpfile=$(mktemp)
-  curl -f "$url" -o "$tmpfile" || ( >&2 echo "\nError trying to download file $url\n"; exit 1 )
+  curl -f "$url" -o "$tmpfile" || ( >&2 echo -e "\nError trying to download file $url\n"; exit 1 )
 
   # copy file over old (preserves file attr from original file)
   rsync --no-perms --no-owner --no-group "$tmpfile" "$absolute_file" || ( >&2 echo -e "\nCould not replace file: $absolute_file - do you have sudo rights?\n"; exit 1 )
@@ -123,7 +123,7 @@ case "$1" in
   upgrade)
     version="${2:-$KUBENOW_VERSION}"
 
-    upgrade $version
+    upgrade "$version"
 
     exit
     ;;

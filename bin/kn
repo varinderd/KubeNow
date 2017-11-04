@@ -24,14 +24,14 @@ Commands:
   ssh <host>           ssh to <host> defined in ansible inventory file, default <host> is master
   bash                 run an interactive bash promt in the kubenow provisioners docker-image
   az                   run Microsoft Azure CLI: More help: kn az help
+  upgrade <version>    upgrade kn to <latest|latest-stable|master|"tag">
 
 TEXT_END
 }
 
 # Adapted from stackoverflow-questions-59895
-function resolve_links
-{
-  source=$1
+function resolve_links {
+  source="$1"
   # resolve $source until the file is no longer a symlink
   while [ -h "$source" ]; do
     dir="$( cd -P "$( dirname "$source" )" && pwd )"
@@ -52,9 +52,13 @@ echo "Using KubeNow docker-image tag: $KUBENOW_VERSION"
 # Get all local user group id:s (to be added to user inside docker-image)
 LOCAL_GROUP_IDS="$(id -G)"
 
+echo "before"
+
 # Command name replacement
 first="$1"; shift; set -- "${first/ssh/ssh-kn}" "$@"
 first="$1"; shift; set -- "${first/init/init-kn}" "$@"
+
+echo "before"
 
 case "$1" in
   help)
@@ -63,32 +67,51 @@ case "$1" in
     ;;
 
   upgrade)
-    latest="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
-                  jq -r '.[0].tag_name')"
-        latest_stable="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
-                         jq -r '[.[] | select(.prerelease==false) | .tag_name'][0])"
-        master=
-        latest_url=
-        latest_stabe_url=
-        master_url=
-
-        # get full filename of this script
-        absolute_file="$(resolve_links ${BASH_SOURCE[0]})"
-        echo "absolute_file=$absolute_file"
-
-        # download new version to temp
-
-        # copy file over old
-
-        # rm temp
-
-        # pull latest docker
-        kubenow/provisioners:"$KUBENOW_VERSION"
-
-        exit
+    version="${2:-$KUBENOW_VERSION}"
+    echo "upgrade version: $version"
+    tag=""
+    case "$version" in
+      latest)
+        tag="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
+              jq -r '.[0].tag_name')"
         ;;
+      latest-stable)
+        echo "lateststable"
+        tag="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
+                     jq -r '[.[] | select(.prerelease==false) | .tag_name'][0])"
+        ;;
+      *)
+        tag="$version"
+        ;;
+    esac
 
-    init-kn)
+    url="https://raw.githubusercontent.com/kubenow/KubeNow/$tag/bin/kn"
+
+    echo "url $url"
+
+    # get full filename of this script
+    absolute_file="$(resolve_links ${BASH_SOURCE[0]})"
+    echo "abs file $absolute_file"
+
+    # download new version to temp
+    tmpfile=$(mktemp)
+    curl "$url" -o "$tmpfile"
+
+    # copy file over old (cp preserves file attr from original file)
+
+    cp -f "$tmpfile" "$absolute_file"
+
+    rm "$tmpfile"
+
+    # pull latest docker
+    docker pull kubenow/provisioners:"$version"
+
+    echo "updated ok to version $tag"
+
+    exit
+    ;;
+
+  init-kn)cp
     # Validate
     if [ "$#" -ne 3 ]; then
       >&2 echo "Error: wrong number of argument for the init command"
@@ -115,8 +138,8 @@ case "$1" in
     # Wrap docker run
     # shellcheck disable=SC2086
     docker run --rm -it \
-      -v "$INIT_DIR":/KubeNow_config/ \
-      -v "$INIT_DIR":/KubeNow_root/ \
+      -v "$INIT_DIR":/KubeNow_config \
+      -v "$INIT_DIR":/KubeNow_root \
       -e "LOCAL_USER_ID=$UID" \
       -e "LOCAL_GROUP_IDS=$LOCAL_GROUP_IDS" \
       kubenow/provisioners:"$KUBENOW_VERSION" \
@@ -127,12 +150,12 @@ case "$1" in
     # Validate PWD (not needed for a selection of commands)
     if ! grep -qw "$COMMAND" <<< "kubetoken az bash"; then
       if [ ! -f ssh_key ] || [ ! -f ssh_key.pub ] ; then
-          >&2 echo "Error: ssh_key not found. Are you in the right directory?"
-          exit 1
+        >&2 echo "Error: ssh_key not found. Are you in the right directory?"
+        exit 1
       fi
       if [ ! -f terraform.tfvars ] ; then
-          >&2 echo "Error: terraform.tfvars not found. Please create one using the templates."
-          exit 1
+        >&2 echo "Error: terraform.tfvars not found. Please create one using the templates."
+        exit 1
       fi
       if [ ! -f ansible.cfg ] ; then
         >&2 echo "Error: ansible.cfg not found. Are you in the right directory?"
@@ -143,8 +166,8 @@ case "$1" in
     # Wrap docker run
     # shellcheck disable=SC2086
     docker run --rm -it \
-      -v "$PWD":/KubeNow_config/ \
-      -v "$PWD":/KubeNow_root/ \
+      -v "$PWD":/KubeNow_config \
+      -v "$PWD":/KubeNow_root \
       -e "LOCAL_USER_ID=$UID" \
       -e "LOCAL_GROUP_IDS=$LOCAL_GROUP_IDS" \
       -e "TERRAFORM_OPT=$TERRAFORM_OPT" \
@@ -170,3 +193,5 @@ case "$1" in
     ;;
 
 esac
+
+echo "done"

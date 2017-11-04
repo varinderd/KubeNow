@@ -1,10 +1,11 @@
 #!/bin/bash
+#
+# Description of script
 
-# Exit immediately if a command exits with a non-zero status
 set -e
 
 function usage {
-  cat <<TEXT_END
+  cat <<EOF
 
 Usage: kn <command>
 Commands:
@@ -26,10 +27,21 @@ Commands:
   az                   run Microsoft Azure CLI: More help: kn az help
   upgrade <version>    upgrade kn to <latest|latest-stable|master|"tag">
 
-TEXT_END
+EOF
 }
 
+
+
+#
 # Adapted from stackoverflow-questions-59895
+#
+# Globals:
+#   None
+# Arguments:
+#   file to resolve
+# Returns:
+#   resolved file
+#
 function resolve_links {
   source="$1"
   # resolve $source until the file is no longer a symlink
@@ -42,6 +54,48 @@ function resolve_links {
   done
   echo "$source"
 }
+
+#
+# Description of function
+#
+function upgrade {
+  echo "upgrade version: $version"
+  tag=""
+  case "$version" in
+    latest)
+      tag="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
+            jq -r '.[0].tag_name')"
+      ;;
+    latest-stable)
+      echo "lateststable"
+      tag="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
+                   jq -r '[.[] | select(.prerelease==false) | .tag_name'][0])"
+      ;;
+    *)
+      tag="$version"
+      ;;
+  esac
+
+  url="https://raw.githubusercontent.com/kubenow/KubeNow/$tag/bin/kn"
+
+  # get full filename of this script
+  absolute_file="$(resolve_links ${BASH_SOURCE[0]})"
+
+  # download new version to temp
+  tmpfile=$(mktemp)
+  curl -f "$url" -o "$tmpfile" || ( >&2 echo "\nError trying to download file $url\n"; exit 1 )
+
+  # copy file over old (preserves file attr from original file)
+  rsync --no-perms --no-owner --no-group "$tmpfile" "$absolute_file" || ( >&2 echo -e "\nCould not replace file: $absolute_file - do you have sudo rights?\n"; exit 1 )
+
+  rm "$tmpfile"
+
+  # pull latest docker
+  docker pull kubenow/provisioners:"$version"
+
+  echo -e "\nUpdated ok to version $tag\n"
+}
+
 
 # If no version specified take stable
 if [ -z "$KUBENOW_VERSION" ] ; then
@@ -68,45 +122,8 @@ case "$1" in
 
   upgrade)
     version="${2:-$KUBENOW_VERSION}"
-    echo "upgrade version: $version"
-    tag=""
-    case "$version" in
-      latest)
-        tag="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
-              jq -r '.[0].tag_name')"
-        ;;
-      latest-stable)
-        echo "lateststable"
-        tag="$(curl https://api.github.com/repos/kubenow/KubeNow/releases | \
-                     jq -r '[.[] | select(.prerelease==false) | .tag_name'][0])"
-        ;;
-      *)
-        tag="$version"
-        ;;
-    esac
 
-    url="https://raw.githubusercontent.com/kubenow/KubeNow/$tag/bin/kn"
-
-    echo "url $url"
-
-    # get full filename of this script
-    absolute_file="$(resolve_links ${BASH_SOURCE[0]})"
-    echo "abs file $absolute_file"
-
-    # download new version to temp
-    tmpfile=$(mktemp)
-    curl "$url" -o "$tmpfile"
-
-    # copy file over old (cp preserves file attr from original file)
-
-    cp -f "$tmpfile" "$absolute_file"
-
-    rm "$tmpfile"
-
-    # pull latest docker
-    docker pull kubenow/provisioners:"$version"
-
-    echo "updated ok to version $tag"
+    upgrade $version
 
     exit
     ;;
@@ -163,11 +180,15 @@ case "$1" in
       fi
     fi
 
+    # get path of google credentials file and mount it
+    gce_cred_file=$(grep "credentials_file" "terraform.tfvars" | cut -d "=" -f 2- | awk -F\" '{print $(NF-1)}')
+
     # Wrap docker run
     # shellcheck disable=SC2086
     docker run --rm -it \
       -v "$PWD":/KubeNow_config \
       -v "$PWD":/KubeNow_root \
+      -v "$gce_cred_file":/service_account.json \
       -e "LOCAL_USER_ID=$UID" \
       -e "LOCAL_GROUP_IDS=$LOCAL_GROUP_IDS" \
       -e "TERRAFORM_OPT=$TERRAFORM_OPT" \

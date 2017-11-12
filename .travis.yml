@@ -21,6 +21,7 @@ env:
   global:
     - TERRAFORM_VERSION=0.10.7
     - ANSIBLE_LINT_VERSION=3.4.15
+    - DOCKER_OPTS=--experimental=true
   matrix:
     - HOST_CLOUD=openstack
     - HOST_CLOUD=gce

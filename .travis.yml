@@ -64,7 +64,7 @@ before_install:
   - shellcheck $(find . -type f -name "*.sh")
   - shellcheck bin/*
   # check Dockerfile
-  - docker run --rm -i lukasmartinelli/hadolint hadolint --ignore DL3008 --ignore DL3015 - < Dockerfile
+  - docker run --rm -i lukasmartinelli/hadolint hadolint --ignore DL3008 --ignore DL3015 --ignore DL3013 - < Dockerfile
 
 # Build Docker image
 install: docker build --squashed -t kubenow/provisioners:latest .
@@ -73,7 +73,7 @@ before_script:
 
   # Copy kn bin
   - sudo cp bin/kn /usr/bin/
-  
+
   # Init test deployment
   - kn init ${HOST_CLOUD} test-deployment
   - cd test-deployment

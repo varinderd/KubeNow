@@ -1,0 +1,10 @@
+[master]
+${masters}
+[edge]
+${edges}
+[all:vars]
+nodes_count=${nodes_count}
+domain=${domain}
+extra_disk_device=${extra_disk_device}
+glusternode_count=${glusternode_count}
+gluster_volumetype=${gluster_volumetype}

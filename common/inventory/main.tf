@@ -69,7 +69,7 @@ locals {
   pure_edges = "${var.edge_count == 0 ? "" : join("\n",formatlist("%s ansible_ssh_host=%s ansible_ssh_user=${var.ssh_user}", slice(var.edge_hostnames,0,var.edge_count), var.edge_public_ip))}"
     
   # Add master to edges if that is the case
-  edges = "${var.master_as_edge == true ? "${format("%s\n%s", local.masters, local.edges)}" : local.pure_edges}"
+  edges = "${var.master_as_edge == true ? "${format("%s\n%s", local.masters, local.pure_edges)}" : local.pure_edges}"
     
   nodes_count = "${1 + var.edge_count + var.node_count + var.glusternode_count}"
 }
@@ -81,7 +81,8 @@ data "template_file" "inventory" {
   vars {
     masters            = "${local.masters}"
     nodes              = "${local.nodes}"
-    edges              = "${local.e}"
+    edges              = "${local.edges}"
+    nodes_count        = "${local.nodes_count}"
     domain             = "${var.domain}"
     extra_disk_device  = "${var.extra_disk_device}"
     glusternode_count  = "${var.glusternode_count}"
@@ -101,6 +102,6 @@ resource "null_resource" "local" {
   }
 
   provisioner "local-exec" {
-    command = "echo -e '${data.template_file.inventory.rendered}' > \"${path.root}/../${var.inventory_output_file}\""
+    command = "echo '${data.template_file.inventory.rendered}' > \"${path.root}/../${var.inventory_output_file}\""
   }
 }
